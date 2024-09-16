@@ -1,33 +1,64 @@
 import React, { useEffect, useState } from "react";
 import { Box, Typography, List, ListItem, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import broJosephYf from '../img/bro-joseph-bg.png';
-import { useGetHymnBooksQuery, useGetLanguagesQuery } from "../features/api/apiSlice"; // Import the background image
+import { useGetHymnBooksQuery, useGetLanguagesQuery, useGetPreferredLanguageQuery } from "../features/api/apiSlice";
 
 const HymnbookList = () => {
     const [language, setLanguage] = useState(''); // Language state
     const [hymnbooks, setHymnbooks] = useState([]);
     const [languages, setLanguages] = useState([]);
 
-    const { data: loadedHymnbooks, isLoading: hymnbooksAreLoading, isSuccess: hymnbooksSuccessfullyLoaded } = useGetHymnBooksQuery();
-    const { data: loadedLanguages, isLoading: languagesAreLoading, isSuccess: LanguagesSuccessfullyLoaded } = useGetLanguagesQuery();
+    const navigate = useNavigate(); // Initialize the navigate hook
 
+    const { data: loadedHymnbooks, isLoading: hymnbooksAreLoading, isSuccess: hymnbooksSuccessfullyLoaded } = useGetHymnBooksQuery();
+    const { data: loadedLanguages, isLoading: languagesAreLoading, isSuccess: languagesSuccessfullyLoaded } = useGetLanguagesQuery();
+    const { data: loadedPreferredLanguage, isSuccess: preferredLanguageLoaded } = useGetPreferredLanguageQuery();
+
+    // Set the hymnbooks when loaded
     useEffect(() => {
         if (hymnbooksSuccessfullyLoaded) {
-            console.log("hymnbooksLoaded are : ", loadedHymnbooks);
             setHymnbooks(loadedHymnbooks);
         }
     }, [hymnbooksSuccessfullyLoaded, loadedHymnbooks]);
 
+    // Set the languages when loaded
     useEffect(() => {
-        if (LanguagesSuccessfullyLoaded) {
-            console.log("loadedLanguages are : ", loadedLanguages);
+        if (languagesSuccessfullyLoaded) {
             setLanguages(loadedLanguages);
         }
-    }, [LanguagesSuccessfullyLoaded, loadedLanguages]);
+    }, [languagesSuccessfullyLoaded, loadedLanguages]);
+
+    // Set the preferred language when loaded and set it as the default value for the dropdown
+    useEffect(() => {
+        if (preferredLanguageLoaded && loadedLanguages) {
+            const preferredLanguage = loadedLanguages.find(
+                lang => lang.languageId === loadedPreferredLanguage.languageId // Compare using languageId
+            );
+            if (preferredLanguage) {
+                setLanguage(preferredLanguage); // Set the dropdown value using languageId
+            }
+        }
+    }, [preferredLanguageLoaded, loadedLanguages, loadedPreferredLanguage]);
 
     // Handle language change
     const handleLanguageChange = (event) => {
-        setLanguage(event.target.value);
+        const selectedLanguage = languages.find(l => l.languageId === event.target.value);
+        setLanguage(selectedLanguage); // Set language based on languageId
+    };
+
+    // Handle clicking on a hymnbook
+    const handleHymnbookClick = (hymnbook) => {
+        if (language) {
+            navigate("/hymnslist", {
+                state: {
+                    hymnbook: hymnbook,
+                    language: language
+                }
+            });
+        } else {
+            console.log('Please select a language first.');
+        }
     };
 
     return (
@@ -75,7 +106,10 @@ const HymnbookList = () => {
                                 justifyContent: 'center',
                                 alignItems: 'center',
                                 whiteSpace: 'nowrap', // Prevent text wrapping
-                            }}>
+                                cursor: 'pointer' // Indicate clickable
+                            }}
+                            onClick={() => handleHymnbookClick(hymnbook)} // Handle hymnbook click
+                        >
                             {hymnbook?.hymnbookName}
                         </ListItem>
                     ))}
@@ -102,7 +136,7 @@ const HymnbookList = () => {
                     >
                         {/* Dynamically populate languages */}
                         {languages.map((languageItem) => (
-                            <MenuItem key={languageItem.languageId} value={languageItem.languageName}>
+                            <MenuItem key={languageItem.languageId} value={languageItem.languageId}>
                                 {languageItem.languageName}
                             </MenuItem>
                         ))}
