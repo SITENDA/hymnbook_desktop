@@ -1,8 +1,8 @@
 import React, {useState, useEffect} from "react";
-import {Box, Typography, List, ListItem, TextField, InputAdornment, Button} from "@mui/material";
+import {Box, Typography, List, ListItem, TextField, InputAdornment, Button, FormControl, InputLabel, Select, MenuItem} from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import {useNavigate, useLocation} from "react-router-dom";
-import {useGetHymnsByBookAndLanguageQuery} from "../features/api/apiSlice";
+import {useGetHymnsByBookAndLanguageQuery, useGetLanguagesQuery, useUpdateSettingMutation} from "../features/api/apiSlice";
 import {ThemeProvider} from "@mui/material/styles"; // Import ThemeProvider from MUI
 import {useTendaTheme} from './useTendaTheme'; // Import the custom Tenda theme
 
@@ -11,14 +11,28 @@ const HymnsList = () => {
     const [filteredHymns, setFilteredHymns] = useState([]);
     const location = useLocation();
     const navigate = useNavigate();
-    const {hymnbook, language, range} = location.state;  // Destructure range from location.state
+    const {hymnbook, language: initialLanguage, range} = location.state;  // Destructure range from location.state
+    const [language, setLanguage] = useState(initialLanguage); // Set initial language from location.state
     const theme = useTendaTheme(); // Apply the Tenda theme
+
+    const [updateSetting] = useUpdateSettingMutation(); // To update language preference
 
     // Fetch hymns by book and language
     const {data: hymns, isSuccess} = useGetHymnsByBookAndLanguageQuery({
         hymnbookId: hymnbook?.hymnbookId,
         languageId: language?.languageId
     });
+
+    // Fetch available languages
+    const {data: loadedLanguages, isSuccess: languagesSuccessfullyLoaded} = useGetLanguagesQuery();
+    const [languages, setLanguages] = useState([]);
+
+    // Set the languages when loaded
+    useEffect(() => {
+        if (languagesSuccessfullyLoaded) {
+            setLanguages(loadedLanguages);
+        }
+    }, [languagesSuccessfullyLoaded, loadedLanguages]);
 
     // Filter hymns based on the search term and hymnbook range
     useEffect(() => {
@@ -45,10 +59,16 @@ const HymnsList = () => {
         }
     }, [searchTerm, hymns, isSuccess, range]);
 
-
     // Handle click on hymn to navigate to the HymnDisplay page
     const handleHymnClick = (hymn) => {
         navigate('/hymnsdisplay', {state: {hymn}});
+    };
+
+    // Handle language change
+    const handleLanguageChange = async (event) => {
+        const selectedLanguage = languages.find(l => l.languageId === event.target.value);
+        setLanguage(selectedLanguage); // Set language based on languageId
+        await updateSetting({key: "preferredLanguage", value: (selectedLanguage.languageId).toString()}).unwrap();
     };
 
     return (
@@ -75,10 +95,36 @@ const HymnsList = () => {
                     Back
                 </Button>
 
-                {/* Top-centered title */}
-                <Typography variant="h3" component="h1" fontWeight="bold" color={theme.palette.primary.main} sx={{textAlign: 'center'}}>
-                    {hymnbook?.hymnbookName}
-                </Typography>
+                {/* Hymnbook Name and Language Selection */}
+                <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem'}}>
+                    <Typography variant="h3" component="h3" fontWeight="bold" color={theme.palette.primary.main}>
+                        {hymnbook?.hymnbookName}
+                    </Typography>
+
+                    {/* Language Dropdown */}
+                    <FormControl variant="outlined" sx={{minWidth: 200}}>
+                        <InputLabel id="language-select-label">Language</InputLabel>
+                        <Select
+                            labelId="language-select-label"
+                            id="language-select"
+                            value={language?.languageId || ''} // Use empty string if language is not set
+                            onChange={handleLanguageChange}
+                            label="Language"
+                            sx={{
+                                backgroundColor: theme.palette.background.paper,
+                                borderRadius: '4px',
+                                color: theme.palette.text.primary
+                            }}
+                        >
+                            {/* Dynamically populate languages */}
+                            {languages.map((languageItem) => (
+                                <MenuItem key={languageItem.languageId} value={languageItem.languageId}>
+                                    {languageItem.languageName}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                </Box>
 
                 {/* Search Input */}
                 <TextField

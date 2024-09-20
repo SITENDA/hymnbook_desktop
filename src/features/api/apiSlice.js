@@ -79,6 +79,32 @@ export const apiSlice = createApi({
                 {type: 'Hymn', hymnbookId, languageId},
             ],
         }),
+        getHymnByIdAndLanguage: builder.query({
+            async queryFn({hymnId, languageId}) {
+                try {
+                    console.log("HymnId : ", hymnId, ", languageId : ", languageId)
+                    const hymn = await window.electronAPI.getHymnByIdAndLanguage(hymnId, languageId);
+                    return {data: hymn};
+                } catch (error) {
+                    return {error: {status: 'CUSTOM_ERROR', message: error.message}};
+                }
+            },
+            providesTags: (result, error, {hymnId, languageId}) => [
+                {type: 'Hymn', hymnId, languageId},
+            ],
+        }),
+        // Add updateSetting endpoint
+        updateSetting: builder.mutation({
+            async queryFn({key, value}) {
+                try {
+                    const result = await window.electronAPI.updateSetting(key, value);
+                    return {data: result};
+                } catch (error) {
+                    return {error: {status: 'CUSTOM_ERROR', message: error.message}};
+                }
+            },
+            invalidatesTags: ['Setting'],
+        }),
     }),
 });
 
@@ -97,4 +123,6 @@ export const {
     useGetHymnsByBookAndLanguageQuery,
     useGetLanguagesQuery,
     useGetPreferredLanguageQuery,
+    useUpdateSettingMutation,
+    useGetHymnByIdAndLanguageQuery,
 } = apiSlice;

@@ -1,5 +1,16 @@
 import React, {useState, useRef, useEffect, useMemo} from 'react';
-import {Box, Typography, Divider, Fab, IconButton, Chip} from '@mui/material';
+import {
+    Box,
+    Typography,
+    Divider,
+    Fab,
+    IconButton,
+    Chip,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem
+} from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
@@ -7,11 +18,12 @@ import {useLocation, useNavigate} from 'react-router-dom';
 import {ThemeProvider} from '@mui/material/styles';
 import './HymnDisplay.css';
 import {useTendaTheme} from './useTendaTheme';
+import {useGetHymnByIdAndLanguageQuery, useGetLanguagesQuery} from '../features/api/apiSlice';
 
 const HymnDisplay = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const {hymn} = location.state;
+    const {hymn: clickedHymn} = location.state;
     const [currentStanzaIndex, setCurrentStanzaIndex] = useState(0);
     const [fontSize, setFontSize] = useState(2.5); // Default font size in rem
     const stanzaRef = useRef(); // Reference to the Typography component
@@ -20,6 +32,24 @@ const HymnDisplay = () => {
     const MAX_RECURSION_LIMIT = 50; // Limit to prevent infinite loops
     const [recursionCounter, setRecursionCounter] = useState(0); // Counter for recursion limit
     const theme = useTendaTheme(); // Apply custom theme
+    const [hymn, setHymn] = useState(clickedHymn);
+    const [languageId, setLanguageId] = useState(1); // Default language ID
+    const {data: loadedHymn, isSuccess: hymnLoaded} = useGetHymnByIdAndLanguageQuery({
+        hymnId: clickedHymn.hymnId,
+        languageId
+    });
+    const {data: languages, isSuccess: languagesLoaded} = useGetLanguagesQuery();
+
+    useEffect(() => {
+        if (hymnLoaded) {
+            setHymn(loadedHymn);
+        }
+    }, [loadedHymn, hymnLoaded]);
+
+    // Function to handle language change
+    const handleLanguageChange = (event) => {
+        setLanguageId(event.target.value); // Set the new languageId to refetch the hymn
+    };
 
     // Function to handle moving to the next stanza
     const nextStanza = () => {
@@ -40,12 +70,18 @@ const HymnDisplay = () => {
         const stanzasWithChorus = [];
         const chorus = hymn.stanzas.find(stanza => stanza.isChorus); // Get the chorus stanza if any
 
-        hymn.stanzas.forEach(stanza => {
-            stanzasWithChorus.push(stanza); // Add the stanza
-            if (!stanza.isChorus && chorus) {
-                stanzasWithChorus.push(chorus); // Add the chorus after each stanza if it exists
-            }
-        });
+        if (chorus) {
+            hymn.stanzas.forEach(stanza => {
+                if (!stanza.isChorus) {
+                    stanzasWithChorus.push(stanza); // Add the stanza
+                    stanzasWithChorus.push(chorus); // Add the chorus after each stanza if it exists
+                }
+            });
+        } else {
+            hymn.stanzas.forEach(stanza => {
+                stanzasWithChorus.push(stanza); // Add the stanza
+            });
+        }
 
         return stanzasWithChorus;
     }, [hymn.stanzas]);
@@ -136,7 +172,7 @@ const HymnDisplay = () => {
                         <NavigateBeforeIcon fontSize="large"/>
                     </IconButton>
 
-                    {/* Hymn Number, Title in Uppercase, and Stanza Chip */}
+                    {/* Hymn Number, Title in Uppercase, Stanza Chip */}
                     <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
                         <Typography
                             variant="h4"
@@ -148,6 +184,8 @@ const HymnDisplay = () => {
                             {/* Include hymn number and convert title to uppercase */}
                             {`${hymn.hymnNumber} - ${hymn.title.toUpperCase()}`}
                         </Typography>
+
+                        {/* Stanza Chip */}
                         <Chip
                             color="primary"
                             variant="outlined"
@@ -156,9 +194,37 @@ const HymnDisplay = () => {
                                 extendedStanzas[currentStanzaIndex].isChorus
                                     ? 'Chorus'
                                     : `Verse ${currentStanzaIndex + 1}`
-                            } // Show 'Chorus' if it's a chorus, otherwise display the stanza number
+                            }
                         />
                     </Box>
+
+                    {/* Language Dropdown (positioned in the top-right corner) */}
+                    {languagesLoaded && (
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                top: '50%', // Adjust vertical position as necessary
+                                right: '1rem', // Adjust for horizontal positioning
+                                transform: 'translateY(-50%)', // Centers the element vertically
+                            }}
+                        >
+                            <FormControl variant="outlined" sx={{minWidth: 120}}>
+                                <InputLabel id="language-select-label">Language</InputLabel>
+                                <Select
+                                    labelId="language-select-label"
+                                    value={languageId}
+                                    onChange={handleLanguageChange}
+                                    label="Language"
+                                >
+                                    {languages.map((lang) => (
+                                        <MenuItem key={lang.languageId} value={lang.languageId}>
+                                            {lang.languageName}
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                        </Box>
+                    )}
                 </Box>
 
                 {/* Divider between title and stanza */}
@@ -222,7 +288,6 @@ const HymnDisplay = () => {
                 </Box>
             </Box>
         </ThemeProvider>
-
 
     );
 };

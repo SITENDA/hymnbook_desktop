@@ -2,12 +2,18 @@ import React, {useState, useEffect} from "react";
 import {Box, Typography, List, ListItem, FormControl, InputLabel, Select, MenuItem} from "@mui/material";
 import {useNavigate} from 'react-router-dom'; // Import useNavigate
 import broJosephYf from '../img/bro-joseph-bg.png';
-import {useGetHymnBooksQuery, useGetLanguagesQuery, useGetPreferredLanguageQuery} from "../features/api/apiSlice";
+import {
+    useGetHymnBooksQuery,
+    useGetLanguagesQuery,
+    useGetPreferredLanguageQuery,
+    useUpdateSettingMutation
+} from "../features/api/apiSlice";
 
 const HymnbookList = () => {
     const [language, setLanguage] = useState(null); // Language state initialized as null
     const [hymnbooks, setHymnbooks] = useState([]);
     const [languages, setLanguages] = useState([]);
+    const [updateSetting] = useUpdateSettingMutation();
 
     const navigate = useNavigate(); // Initialize the navigate hook
 
@@ -73,9 +79,10 @@ const HymnbookList = () => {
     }, [preferredLanguageLoaded, loadedLanguages, loadedPreferredLanguage]);
 
     // Handle language change
-    const handleLanguageChange = (event) => {
+    const handleLanguageChange = async (event) => {
         const selectedLanguage = languages.find(l => l.languageId === event.target.value);
         setLanguage(selectedLanguage); // Set language based on languageId
+        await updateSetting({key: "preferredLanguage", value: (selectedLanguage.languageId).toString()}).unwrap();
     };
 
     const handleHymnbookClick = (hymnbook) => {
