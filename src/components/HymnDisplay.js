@@ -1,4 +1,4 @@
-import React, {useState, useRef, useEffect} from 'react';
+import React, {useState, useRef, useEffect, useMemo} from 'react';
 import {Box, Typography, Divider, Fab, IconButton, Chip} from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -23,7 +23,7 @@ const HymnDisplay = () => {
 
     // Function to handle moving to the next stanza
     const nextStanza = () => {
-        if (currentStanzaIndex < hymn.stanzas.length - 1) {
+        if (currentStanzaIndex < extendedStanzas.length - 1) {
             setCurrentStanzaIndex(currentStanzaIndex + 1);
         }
     };
@@ -35,6 +35,21 @@ const HymnDisplay = () => {
         }
     };
 
+    // Compute the extended stanza list to include the chorus after each stanza
+    const extendedStanzas = useMemo(() => {
+        const stanzasWithChorus = [];
+        const chorus = hymn.stanzas.find(stanza => stanza.isChorus); // Get the chorus stanza if any
+
+        hymn.stanzas.forEach(stanza => {
+            stanzasWithChorus.push(stanza); // Add the stanza
+            if (!stanza.isChorus && chorus) {
+                stanzasWithChorus.push(chorus); // Add the chorus after each stanza if it exists
+            }
+        });
+
+        return stanzasWithChorus;
+    }, [hymn.stanzas]);
+
     // Helper function to recursively increase font size until condition is met
     const increaseFontSizeGradually = () => {
         const stanzaElement = stanzaRef.current;
@@ -45,7 +60,6 @@ const HymnDisplay = () => {
 
         // Detect if the height has changed before increasing further
         if (stanzaHeight < displayBoxHeight * 0.7 && fontSize < 9 && stanzaHeight !== previousHeight && recursionCounter < MAX_RECURSION_LIMIT) {
-            console.log('Increasing font size to : ', fontSize, "recursionCounter : ", recursionCounter, ", stanza height : ", stanzaHeight);
             setFontSize((prevSize) => prevSize + 0.1);
             setRecursionCounter(recursionCounter + 1);
             setPreviousHeight(stanzaHeight); // Update the previous height
@@ -64,7 +78,6 @@ const HymnDisplay = () => {
 
         // Detect if the height has changed before decreasing further
         if (stanzaHeight > displayBoxHeight && fontSize > 2.0 && stanzaHeight !== previousHeight && recursionCounter < MAX_RECURSION_LIMIT) {
-            console.log('Decreasing font size to : ', fontSize, "recursionCounter : ", recursionCounter, ", stanza height : ", stanzaHeight);
             setFontSize((prevSize) => prevSize - 0.1);
             setRecursionCounter(recursionCounter + 1);
             setPreviousHeight(stanzaHeight); // Update the previous height
@@ -106,7 +119,7 @@ const HymnDisplay = () => {
                     flexDirection: 'column',
                 }}
             >
-                {/* Top section with back button and hymn title */}
+                {/* Top section with back button, hymn number, and hymn title */}
                 <Box
                     sx={{
                         height: '100px',
@@ -123,7 +136,7 @@ const HymnDisplay = () => {
                         <NavigateBeforeIcon fontSize="large"/>
                     </IconButton>
 
-                    {/* Hymn Title and Stanza Chip */}
+                    {/* Hymn Number, Title in Uppercase, and Stanza Chip */}
                     <Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
                         <Typography
                             variant="h4"
@@ -132,10 +145,19 @@ const HymnDisplay = () => {
                             color={theme.palette.text.primary} // Use theme text color
                             sx={{textAlign: 'center', marginRight: '1rem'}}
                         >
-                            {hymn.title}
+                            {/* Include hymn number and convert title to uppercase */}
+                            {`${hymn.hymnNumber} - ${hymn.title.toUpperCase()}`}
                         </Typography>
-                        <Chip color="primary" variant="outlined" sx={{marginRight: 2}}
-                              label={`Stanza ${currentStanzaIndex + 1}`}/>
+                        <Chip
+                            color="primary"
+                            variant="outlined"
+                            sx={{marginRight: 2}}
+                            label={
+                                extendedStanzas[currentStanzaIndex].isChorus
+                                    ? 'Chorus'
+                                    : `Verse ${currentStanzaIndex + 1}`
+                            } // Show 'Chorus' if it's a chorus, otherwise display the stanza number
+                        />
                     </Box>
                 </Box>
 
@@ -167,7 +189,7 @@ const HymnDisplay = () => {
                             fontFamily: 'Roboto',
                         }}
                     >
-                        {hymn.stanzas[currentStanzaIndex].stanzaText}
+                        {extendedStanzas[currentStanzaIndex].stanzaText}
                     </Typography>
 
                     {/* Previous Stanza Button (Floating Action Button) */}
@@ -188,7 +210,7 @@ const HymnDisplay = () => {
                     <Fab
                         color="primary"
                         onClick={nextStanza}
-                        disabled={currentStanzaIndex === hymn.stanzas.length - 1}
+                        disabled={currentStanzaIndex === extendedStanzas.length - 1}
                         sx={{
                             position: 'absolute',
                             right: '2rem',
@@ -200,6 +222,8 @@ const HymnDisplay = () => {
                 </Box>
             </Box>
         </ThemeProvider>
+
+
     );
 };
 
