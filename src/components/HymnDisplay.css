@@ -1,0 +1,40 @@
+/* For modern browsers */
+::-webkit-scrollbar {
+  width: 12px; /* Scrollbar width */
+}
+
+::-webkit-scrollbar-track {
+  background: #001529FF; /* Track background */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #808378; /* Scrollbar thumb color */
+  border-radius: 10px; /* Rounded corners for the thumb */
+  border: 3px solid #001529FF; /* Space between thumb and track */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #808378; /* Darker color on hover */
+}
+
+/* For Firefox browsers */
+* {
+  scrollbar-width: thin; /* Thin scrollbar */
+  scrollbar-color: #808378 #001529FF; /* Scrollbar thumb and track colors */
+}
+
+/* Adjust scrollbar appearance for specific scrollable element */
+.scrollable-element {
+  overflow-y: auto;
+  height: 100%;
+}
+
+/* Optional: Custom styling for the hymn display */
+/*.hymn-display-container {*/
+/*  overflow-y: auto;*/
+/*  background-color: #f9f9f9;*/
+/*  padding: 1rem;*/
+/*  height: 100%;*/
+/*  scroll-behavior: smooth; !* Smooth scrolling *!*/
+/*}*/

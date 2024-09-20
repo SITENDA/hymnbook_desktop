@@ -5,6 +5,7 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import {useLocation, useNavigate} from 'react-router-dom';
 import {ThemeProvider} from '@mui/material/styles';
+import './HymnDisplay.css';
 import {useTendaTheme} from './useTendaTheme';
 
 const HymnDisplay = () => {
@@ -16,7 +17,8 @@ const HymnDisplay = () => {
     const stanzaRef = useRef(); // Reference to the Typography component
     const displayBoxRef = useRef(); // Reference to the Box (stanza display area)
     const [previousHeight, setPreviousHeight] = useState(null); // Store the previous height
-
+    const MAX_RECURSION_LIMIT = 10; // Limit to prevent infinite loops
+    const [recursionCounter, setRecursionCounter] = useState(0); // Counter for recursion limit
     const theme = useTendaTheme(); // Apply custom theme
 
     // Function to handle moving to the next stanza
@@ -42,10 +44,13 @@ const HymnDisplay = () => {
         const displayBoxHeight = displayBoxElement.clientHeight;
 
         // Detect if the height has changed before increasing further
-        if (stanzaHeight < displayBoxHeight * 0.7 && fontSize < 9 && stanzaHeight !== previousHeight) {
-            console.log('Increasing font size');
-            setFontSize((prevSize) => prevSize + 0.2);
+        if (stanzaHeight < displayBoxHeight * 0.7 && fontSize < 9 && stanzaHeight !== previousHeight && recursionCounter < MAX_RECURSION_LIMIT) {
+            console.log('Increasing font size to : ', fontSize, "display box height : ", displayBoxHeight, ", stanza height : ", stanzaHeight);
+            setFontSize((prevSize) => prevSize + 0.1);
+            setRecursionCounter(recursionCounter + 1);
             setPreviousHeight(stanzaHeight); // Update the previous height
+        } else {
+            setRecursionCounter(0);
         }
     };
 
@@ -58,10 +63,13 @@ const HymnDisplay = () => {
         const displayBoxHeight = displayBoxElement.clientHeight;
 
         // Detect if the height has changed before decreasing further
-        if (stanzaHeight > displayBoxHeight && fontSize > 1.0 && stanzaHeight !== previousHeight) {
-            console.log('Decreasing font size');
-            setFontSize((prevSize) => prevSize - 0.2);
+        if (stanzaHeight > displayBoxHeight && fontSize > 2.0 && stanzaHeight !== previousHeight && recursionCounter < MAX_RECURSION_LIMIT) {
+            console.log('Decreasing font size to : ', fontSize, "display box height : ", displayBoxHeight, ", stanza height : ", stanzaHeight);
+            setFontSize((prevSize) => prevSize - 0.1);
+            setRecursionCounter(recursionCounter + 1);
             setPreviousHeight(stanzaHeight); // Update the previous height
+        } else {
+            setRecursionCounter(0);
         }
     };
 
