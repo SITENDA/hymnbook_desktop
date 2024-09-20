@@ -17,7 +17,7 @@ const HymnDisplay = () => {
     const stanzaRef = useRef(); // Reference to the Typography component
     const displayBoxRef = useRef(); // Reference to the Box (stanza display area)
     const [previousHeight, setPreviousHeight] = useState(null); // Store the previous height
-    const MAX_RECURSION_LIMIT = 10; // Limit to prevent infinite loops
+    const MAX_RECURSION_LIMIT = 50; // Limit to prevent infinite loops
     const [recursionCounter, setRecursionCounter] = useState(0); // Counter for recursion limit
     const theme = useTendaTheme(); // Apply custom theme
 
@@ -45,7 +45,7 @@ const HymnDisplay = () => {
 
         // Detect if the height has changed before increasing further
         if (stanzaHeight < displayBoxHeight * 0.7 && fontSize < 9 && stanzaHeight !== previousHeight && recursionCounter < MAX_RECURSION_LIMIT) {
-            console.log('Increasing font size to : ', fontSize, "display box height : ", displayBoxHeight, ", stanza height : ", stanzaHeight);
+            console.log('Increasing font size to : ', fontSize, "recursionCounter : ", recursionCounter, ", stanza height : ", stanzaHeight);
             setFontSize((prevSize) => prevSize + 0.1);
             setRecursionCounter(recursionCounter + 1);
             setPreviousHeight(stanzaHeight); // Update the previous height
@@ -64,7 +64,7 @@ const HymnDisplay = () => {
 
         // Detect if the height has changed before decreasing further
         if (stanzaHeight > displayBoxHeight && fontSize > 2.0 && stanzaHeight !== previousHeight && recursionCounter < MAX_RECURSION_LIMIT) {
-            console.log('Decreasing font size to : ', fontSize, "display box height : ", displayBoxHeight, ", stanza height : ", stanzaHeight);
+            console.log('Decreasing font size to : ', fontSize, "recursionCounter : ", recursionCounter, ", stanza height : ", stanzaHeight);
             setFontSize((prevSize) => prevSize - 0.1);
             setRecursionCounter(recursionCounter + 1);
             setPreviousHeight(stanzaHeight); // Update the previous height
