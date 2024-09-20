@@ -1,26 +1,57 @@
-import React, { useEffect, useState } from "react";
-import { Box, Typography, List, ListItem, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import React, {useState, useEffect} from "react";
+import {Box, Typography, List, ListItem, FormControl, InputLabel, Select, MenuItem} from "@mui/material";
+import {useNavigate} from 'react-router-dom'; // Import useNavigate
 import broJosephYf from '../img/bro-joseph-bg.png';
-import { useGetHymnBooksQuery, useGetLanguagesQuery, useGetPreferredLanguageQuery } from "../features/api/apiSlice";
+import {useGetHymnBooksQuery, useGetLanguagesQuery, useGetPreferredLanguageQuery} from "../features/api/apiSlice";
 
 const HymnbookList = () => {
-    const [language, setLanguage] = useState(''); // Language state
+    const [language, setLanguage] = useState(null); // Language state initialized as null
     const [hymnbooks, setHymnbooks] = useState([]);
     const [languages, setLanguages] = useState([]);
 
     const navigate = useNavigate(); // Initialize the navigate hook
 
-    const { data: loadedHymnbooks, isLoading: hymnbooksAreLoading, isSuccess: hymnbooksSuccessfullyLoaded } = useGetHymnBooksQuery();
-    const { data: loadedLanguages, isLoading: languagesAreLoading, isSuccess: languagesSuccessfullyLoaded } = useGetLanguagesQuery();
-    const { data: loadedPreferredLanguage, isSuccess: preferredLanguageLoaded } = useGetPreferredLanguageQuery();
+    const {
+        data: loadedHymnbooks,
+        isLoading: hymnbooksAreLoading,
+        isSuccess: hymnbooksSuccessfullyLoaded
+    } = useGetHymnBooksQuery();
+    const {
+        data: loadedLanguages,
+        isLoading: languagesAreLoading,
+        isSuccess: languagesSuccessfullyLoaded
+    } = useGetLanguagesQuery();
+    const {data: loadedPreferredLanguage, isSuccess: preferredLanguageLoaded} = useGetPreferredLanguageQuery();
 
     // Set the hymnbooks when loaded
     useEffect(() => {
-        if (hymnbooksSuccessfullyLoaded) {
-            setHymnbooks(loadedHymnbooks);
+        if (hymnbooksSuccessfullyLoaded && loadedHymnbooks) {
+            const modifiedHymnbooks = loadedHymnbooks.flatMap(hymnbook => {
+                if (hymnbook.hymnbookName === "Only Believe Songbook") {
+                    return [
+                        {
+                            hymnbookId: hymnbook.hymnbookId, // Keep the same hymnbookId
+                            hymnbookName: "Only Believe Songbook (1 - 222)",
+                            range: {start: 1, end: 222} // Define the range
+                        },
+                        {
+                            hymnbookId: hymnbook.hymnbookId, // Keep the same hymnbookId
+                            hymnbookName: "Only Believe Songbook (223 - 1085)",
+                            range: {start: 223, end: hymnbook.hymnCount} // Define the range
+                        }
+                    ];
+                }
+                // Return other hymnbooks unchanged
+                return {
+                    ...hymnbook,
+                    range: {start: 1, end: hymnbook.hymnCount},
+                    hymnbookName: hymnbook.hymnbookName.concat(` (1 - ${hymnbook.hymnCount})`)
+                };
+            });
+            setHymnbooks(modifiedHymnbooks);
         }
     }, [hymnbooksSuccessfullyLoaded, loadedHymnbooks]);
+
 
     // Set the languages when loaded
     useEffect(() => {
@@ -47,19 +78,20 @@ const HymnbookList = () => {
         setLanguage(selectedLanguage); // Set language based on languageId
     };
 
-    // Handle clicking on a hymnbook
     const handleHymnbookClick = (hymnbook) => {
         if (language) {
             navigate("/hymnslist", {
                 state: {
                     hymnbook: hymnbook,
-                    language: language
+                    language: language,
+                    range: hymnbook?.range // Pass the range along with the state
                 }
             });
         } else {
             console.log('Please select a language first.');
         }
     };
+
 
     return (
         <Box
@@ -80,18 +112,18 @@ const HymnbookList = () => {
             }}
         >
             {/* Top-centered title */}
-            <Typography variant="h2" component="h1" fontWeight="bold" color="primary" sx={{ textAlign: 'center' }}>
+            <Typography variant="h2" component="h1" fontWeight="bold" color="primary" sx={{textAlign: 'center'}}>
                 Press Play Hymns
             </Typography>
 
             {/* Hymnbooks Title */}
-            <Typography variant="h4" component="h2" color="white" sx={{ marginTop: '2rem', textAlign: 'center' }}>
+            <Typography variant="h4" component="h2" color="white" sx={{marginTop: '2rem', textAlign: 'center'}}>
                 Hymnbooks
             </Typography>
 
             {/* List of Hymnbooks */}
-            <Box sx={{ width: '50%', marginTop: '1rem', overflow: 'hidden' }}>
-                <List sx={{ padding: 0, margin: 0 }}>
+            <Box sx={{width: '50%', marginTop: '1rem', overflow: 'hidden'}}>
+                <List sx={{padding: 0, margin: 0}}>
                     {hymnbooks.map((hymnbook, index) => (
                         <ListItem
                             key={index}
@@ -117,13 +149,13 @@ const HymnbookList = () => {
             </Box>
 
             {/* Language Dropdown */}
-            <Box sx={{ position: 'absolute', top: '20%', right: '5%' }}>
-                <FormControl variant="outlined" sx={{ minWidth: 200 }}>
-                    <InputLabel id="language-select-label" sx={{ color: 'white' }}>Language</InputLabel>
+            <Box sx={{position: 'absolute', top: '20%', right: '5%'}}>
+                <FormControl variant="outlined" sx={{minWidth: 200}}>
+                    <InputLabel id="language-select-label" sx={{color: 'white'}}>Language</InputLabel>
                     <Select
                         labelId="language-select-label"
                         id="language-select"
-                        value={language}
+                        value={language?.languageId || ''} // Use empty string if language is not set
                         onChange={handleLanguageChange}
                         label="Language"
                         sx={{

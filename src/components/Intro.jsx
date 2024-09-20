@@ -2,11 +2,14 @@ import React, { useEffect, useRef } from "react";
 import { Box, Typography } from "@mui/material";
 import Typed from "typed.js";
 import { useNavigate } from "react-router-dom";
-import broJosephYf from '../img/bro-joseph-bg.png'; // Import the background image
+import broJosephYf from '../img/bro-joseph-bg.png';
+import {useSelector} from "react-redux";
+import {selectCurrentTitle} from "../features/auth/authSlice"; // Import the background image
 
 const Intro = () => {
-  const typedRef = useRef(null); // Reference for the typed text
-  const navigate = useNavigate(); // Hook for navigation
+  const typedRef = useRef(null);
+  const navigate = useNavigate();
+  const title = useSelector(selectCurrentTitle)
 
   useEffect(() => {
     // Initialize the Typed.js
@@ -60,7 +63,7 @@ const Intro = () => {
         }}
       >
         <Typography variant="h2" component="h1" fontWeight="bold" color="primary">
-          Press Play Hymns
+            {title}
         </Typography>
       </Box>
 

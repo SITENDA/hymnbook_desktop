@@ -4,6 +4,7 @@ import Hymn from "./components/Hymn";
 import HymnList from "./features/hymns/HymnList";
 import HymnbookList from "./components/HymnbookList";
 import HymnsList from "./components/HymnsList";
+import HymnDisplay from "./components/HymnDisplay";
 
 function App() {
     return (
@@ -14,6 +15,7 @@ function App() {
                     <Route path="/hymnsIndex" element={<HymnList/>}/>
                     <Route path="/hymnbookslist" element={<HymnbookList />} />
                     <Route path="/hymnslist" element={<HymnsList />} />
+                    <Route path="/hymnsdisplay" element={<HymnDisplay />} />
                     <Route path="/hymn" element={<Hymn/>}/>
                     <Route path="/*" element={<Intro/>}/>
                 </Routes>
