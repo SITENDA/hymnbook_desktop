@@ -30,7 +30,7 @@ export const apiSlice = createApi({
                     return {error: {status: 'CUSTOM_ERROR', message: error.message}};
                 }
             },
-            providesTags: ['Language'],
+            providesTags: ['Setting'],
         }),
         searchText: builder.query({
             async queryFn(searchTerm) {
@@ -79,20 +79,22 @@ export const apiSlice = createApi({
                 {type: 'Hymn', hymnbookId, languageId},
             ],
         }),
-        getHymnByIdAndLanguage: builder.query({
+
+        getHymnByIdAndLanguage: builder.mutation({
             async queryFn({hymnId, languageId}) {
                 try {
-                    console.log("HymnId : ", hymnId, ", languageId : ", languageId)
                     const hymn = await window.electronAPI.getHymnByIdAndLanguage(hymnId, languageId);
                     return {data: hymn};
                 } catch (error) {
                     return {error: {status: 'CUSTOM_ERROR', message: error.message}};
                 }
             },
-            providesTags: (result, error, {hymnId, languageId}) => [
+            invalidatesTags: (result, error, {hymnId, languageId}) => [
                 {type: 'Hymn', hymnId, languageId},
             ],
         }),
+
+
         // Add updateSetting endpoint
         updateSetting: builder.mutation({
             async queryFn({key, value}) {
@@ -124,5 +126,5 @@ export const {
     useGetLanguagesQuery,
     useGetPreferredLanguageQuery,
     useUpdateSettingMutation,
-    useGetHymnByIdAndLanguageQuery,
+    useGetHymnByIdAndLanguageMutation,
 } = apiSlice;

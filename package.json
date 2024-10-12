@@ -1,6 +1,7 @@
 {
   "name": "hymnbook_desktop",
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "homepage": ".",
   "private": true,
   "dependencies": {
     "@emotion/react": "^11.13.3",
@@ -47,5 +48,10 @@
   },
   "devDependencies": {
     "@babel/plugin-proposal-private-property-in-object": "^7.21.11"
-  }
+  },
+  "author": "Amos Sitenda",
+  "description": "This this a hymnbook developed using electron for desktop computers and mac-books.",
+  "main": "index.js",
+  "repository": "https://github.com/SITENDA/hymnbook_desktop.git",
+  "license": "MIT"
 }

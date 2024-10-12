@@ -1,8 +1,24 @@
 import React, {useState, useEffect} from "react";
-import {Box, Typography, List, ListItem, TextField, InputAdornment, Button, FormControl, InputLabel, Select, MenuItem} from "@mui/material";
+import {
+    Box,
+    Typography,
+    List,
+    ListItem,
+    TextField,
+    InputAdornment,
+    Button,
+    FormControl,
+    InputLabel,
+    Select,
+    MenuItem
+} from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import {useNavigate, useLocation} from "react-router-dom";
-import {useGetHymnsByBookAndLanguageQuery, useGetLanguagesQuery, useUpdateSettingMutation} from "../features/api/apiSlice";
+import {
+    useGetHymnsByBookAndLanguageQuery,
+    useGetLanguagesQuery, useGetPreferredLanguageQuery,
+    useUpdateSettingMutation
+} from "../features/api/apiSlice";
 import {ThemeProvider} from "@mui/material/styles"; // Import ThemeProvider from MUI
 import {useTendaTheme} from './useTendaTheme'; // Import the custom Tenda theme
 
@@ -15,8 +31,6 @@ const HymnsList = () => {
     const [language, setLanguage] = useState(initialLanguage); // Set initial language from location.state
     const theme = useTendaTheme(); // Apply the Tenda theme
 
-    const [updateSetting] = useUpdateSettingMutation(); // To update language preference
-
     // Fetch hymns by book and language
     const {data: hymns, isSuccess} = useGetHymnsByBookAndLanguageQuery({
         hymnbookId: hymnbook?.hymnbookId,
@@ -26,6 +40,39 @@ const HymnsList = () => {
     // Fetch available languages
     const {data: loadedLanguages, isSuccess: languagesSuccessfullyLoaded} = useGetLanguagesQuery();
     const [languages, setLanguages] = useState([]);
+
+    const [updateSetting] = useUpdateSettingMutation();
+    const {data: loadedPreferredLanguage, isSuccess: preferredLanguageLoaded} = useGetPreferredLanguageQuery();
+
+    // Set the languages when loaded
+    useEffect(() => {
+        if (languagesSuccessfullyLoaded) {
+            setLanguages(loadedLanguages);
+            if (loadedPreferredLanguage) {
+                const preferredLanguage = loadedLanguages.find(
+                    lang => lang.languageId === loadedPreferredLanguage.languageId // Compare using languageId
+                );
+                if (preferredLanguage) {
+                    setLanguage(preferredLanguage); // Set the dropdown value using languageId
+                }
+            }
+        }
+    }, [languagesSuccessfullyLoaded, loadedLanguages, loadedPreferredLanguage]);
+
+    useEffect(() => {
+        const makeUpdate = async (runyankoreLanguage) => {
+            await updateSetting({
+                key: "preferredLanguage",
+                value: (runyankoreLanguage.languageId).toString()
+            }).unwrap();
+        }
+        if (typeof hymnbook?.hymnbookName === "string" && hymnbook?.hymnbookName?.includes("Runyankore")) {
+            const runyankoreLanguage = languages.find(l => l.languageName === "Runyankore");
+            if (runyankoreLanguage) {
+                makeUpdate(runyankoreLanguage);
+            }
+        }
+    }, [hymnbook?.hymnbookName, languages, updateSetting, language])
 
     // Set the languages when loaded
     useEffect(() => {
@@ -60,8 +107,8 @@ const HymnsList = () => {
     }, [searchTerm, hymns, isSuccess, range]);
 
     // Handle click on hymn to navigate to the HymnDisplay page
-    const handleHymnClick = (hymn) => {
-        navigate('/hymnsdisplay', {state: {hymn}});
+    const handleHymnClick = (hymn, hymnId) => {
+        navigate('/hymnsdisplay', {state: {hymn, hymnId: hymnId, languageId: language.languageId}});
     };
 
     // Handle language change
@@ -142,7 +189,8 @@ const HymnsList = () => {
                     InputProps={{
                         startAdornment: (
                             <InputAdornment position="start">
-                                <SearchIcon sx={{color: theme.palette.text.primary}} /> {/* Search icon color from theme */}
+                                <SearchIcon
+                                    sx={{color: theme.palette.text.primary}}/> {/* Search icon color from theme */}
                             </InputAdornment>
                         ),
                     }}
@@ -187,7 +235,7 @@ const HymnsList = () => {
                                         backgroundColor: theme.palette.primary.dark // Hover effect with theme color
                                     }
                                 }}
-                                onClick={() => handleHymnClick(hymn)} // Call handleHymnClick on click
+                                onClick={() => handleHymnClick(hymn, hymn.hymnId)} // Call handleHymnClick on click
                             >
                                 <Typography variant="body1">{hymn.hymnNumber}</Typography>
                                 <Typography variant="body1">{hymn.title}</Typography>

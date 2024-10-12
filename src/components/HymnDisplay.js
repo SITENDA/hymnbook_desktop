@@ -18,12 +18,11 @@ import {useLocation, useNavigate} from 'react-router-dom';
 import {ThemeProvider} from '@mui/material/styles';
 import './HymnDisplay.css';
 import {useTendaTheme} from './useTendaTheme';
-import {useGetHymnByIdAndLanguageQuery, useGetLanguagesQuery} from '../features/api/apiSlice';
+import {useGetHymnByIdAndLanguageMutation, useGetLanguagesQuery} from '../features/api/apiSlice';
 
 const HymnDisplay = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const {hymn: clickedHymn} = location.state;
     const [currentStanzaIndex, setCurrentStanzaIndex] = useState(0);
     const [fontSize, setFontSize] = useState(2.5); // Default font size in rem
     const stanzaRef = useRef(); // Reference to the Typography component
@@ -32,23 +31,18 @@ const HymnDisplay = () => {
     const MAX_RECURSION_LIMIT = 50; // Limit to prevent infinite loops
     const [recursionCounter, setRecursionCounter] = useState(0); // Counter for recursion limit
     const theme = useTendaTheme(); // Apply custom theme
-    const [hymn, setHymn] = useState(clickedHymn);
-    const [languageId, setLanguageId] = useState(1); // Default language ID
-    const {data: loadedHymn, isSuccess: hymnLoaded} = useGetHymnByIdAndLanguageQuery({
-        hymnId: clickedHymn.hymnId,
-        languageId
-    });
+    const [hymn, setHymn] = useState(location?.state?.hymn);
+    const [languageId, setLanguageId] = useState(location?.state?.languageId); // Default language ID
+    const [getHymnByIdAndLanguage] = useGetHymnByIdAndLanguageMutation();
     const {data: languages, isSuccess: languagesLoaded} = useGetLanguagesQuery();
 
-    useEffect(() => {
-        if (hymnLoaded) {
-            setHymn(loadedHymn);
-        }
-    }, [loadedHymn, hymnLoaded]);
-
     // Function to handle language change
-    const handleLanguageChange = (event) => {
+    const handleLanguageChange = async (event) => {
         setLanguageId(event.target.value); // Set the new languageId to refetch the hymn
+        const response = await getHymnByIdAndLanguage({hymnId: location?.state?.hymnId, languageId: event.target.value});
+        if (response?.data) {
+            setHymn(response.data);
+        }
     };
 
     // Function to handle moving to the next stanza
@@ -68,17 +62,17 @@ const HymnDisplay = () => {
     // Compute the extended stanza list to include the chorus after each stanza
     const extendedStanzas = useMemo(() => {
         const stanzasWithChorus = [];
-        const chorus = hymn.stanzas.find(stanza => stanza.isChorus); // Get the chorus stanza if any
+        const chorus = hymn?.stanzas.find(stanza => stanza.isChorus); // Get the chorus stanza if any
 
         if (chorus) {
-            hymn.stanzas.forEach(stanza => {
+            hymn?.stanzas.forEach(stanza => {
                 if (!stanza.isChorus) {
                     stanzasWithChorus.push(stanza); // Add the stanza
                     stanzasWithChorus.push(chorus); // Add the chorus after each stanza if it exists
                 }
             });
         } else {
-            hymn.stanzas.forEach(stanza => {
+            hymn?.stanzas.forEach(stanza => {
                 stanzasWithChorus.push(stanza); // Add the stanza
             });
         }

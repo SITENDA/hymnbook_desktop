@@ -63,31 +63,40 @@ const HymnbookList = () => {
     useEffect(() => {
         if (languagesSuccessfullyLoaded) {
             setLanguages(loadedLanguages);
-        }
-    }, [languagesSuccessfullyLoaded, loadedLanguages]);
-
-    // Set the preferred language when loaded and set it as the default value for the dropdown
-    useEffect(() => {
-        if (preferredLanguageLoaded && loadedLanguages) {
-            const preferredLanguage = loadedLanguages.find(
-                lang => lang.languageId === loadedPreferredLanguage.languageId // Compare using languageId
-            );
-            if (preferredLanguage) {
-                setLanguage(preferredLanguage); // Set the dropdown value using languageId
+            if (loadedPreferredLanguage) {
+                const preferredLanguage = loadedLanguages.find(
+                    lang => lang.languageId === loadedPreferredLanguage.languageId // Compare using languageId
+                );
+                if (preferredLanguage) {
+                    setLanguage(preferredLanguage); // Set the dropdown value using languageId
+                }
             }
         }
-    }, [preferredLanguageLoaded, loadedLanguages, loadedPreferredLanguage]);
+    }, [languagesSuccessfullyLoaded, loadedLanguages, loadedPreferredLanguage]);
 
     // Handle language change
     const handleLanguageChange = async (event) => {
         const selectedLanguage = languages.find(l => l.languageId === event.target.value);
         setLanguage(selectedLanguage); // Set language based on languageId
-        await updateSetting({key: "preferredLanguage", value: (selectedLanguage.languageId).toString()}).unwrap();
+        await updateSetting({key: "preferredLanguage", value: (event.target.value).toString()}).unwrap();
     };
 
-    const handleHymnbookClick = (hymnbook) => {
+    const handleHymnbookClick = async (hymnbook) => {
         if (language) {
-            navigate("/hymnslist", {
+            if (typeof hymnbook?.hymnbookName === "string" && hymnbook?.hymnbookName?.includes("Runyankore")) {
+                const runyankoreLanguage = languages.find(l => l.languageName === "Runyankore");
+                await updateSetting({
+                    key: "preferredLanguage",
+                    value: (runyankoreLanguage.languageId).toString()
+                }).unwrap();
+                navigate("/hymnslist", {
+                    state: {
+                        hymnbook: hymnbook,
+                        language: language,
+                        range: hymnbook?.range // Pass the range along with the state
+                    }
+                });
+            } else navigate("/hymnslist", {
                 state: {
                     hymnbook: hymnbook,
                     language: language,
